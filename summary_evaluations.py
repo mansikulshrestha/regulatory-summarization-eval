@@ -1,90 +1,75 @@
-import json
+import os
 import pandas as pd
-from typing import List, Dict
-from tabulate import tabulate
-from rouge_score import rouge_scorer
-import bert_score
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import plotly.express as px
+
+# Import evaluation function (so CSV can be auto-generated if missing)
+from evaluation import main as run_evaluation
+
+# Ensure CSV exists, else generate it
+if not os.path.exists("summary_eval_scores.csv"):
+    run_evaluation()
+
+# Load Data
+df = pd.read_csv("summary_eval_scores.csv")
+
+# Extract available metrics
+score_columns = [col for col in df.columns if "Score" in col or col == "BERTScore"]
+models = df["Model"].unique()
+
+# Initialize Dash app
+app = dash.Dash(__name__)
+app.title = "Regulatory Data Evaluation Dashboard"
+
+app.layout = html.Div([
+    html.H1("📊 Regulatory Data Evaluation Dashboard", style={"textAlign": "center"}),
+
+    html.Div([
+        html.Label("Select Metric:"),
+        dcc.Dropdown(
+            id="metric-dropdown",
+            options=[{"label": col, "value": col} for col in score_columns],
+            value=score_columns[0]
+        ),
+        html.Label("Select Model(s):"),
+        dcc.Checklist(
+            id="model-checklist",
+            options=[{"label": model, "value": model} for model in models],
+            value=list(models),
+            inline=True
+        )
+    ], style={"width": "80%", "margin": "auto"}),
+
+    dcc.Graph(id="metric-bar-chart"),
+
+    html.Footer("Created for Regulatory Data Evaluation",
+                style={"textAlign": "center", "marginTop": "2rem"})
+])
 
 
-# ---- Metrics ----
-class RougeMetric:
-    def measure(self, reference: str, summary: str) -> Dict[str, float]:
-        scorer = rouge_scorer.RougeScorer(['rouge1', 'rougeL'], use_stemmer=True)
-        scores = scorer.score(reference, summary)
-        return {k: v.fmeasure for k, v in scores.items()}
-
-
-class BertScoreMetric:
-    def measure(self, reference: str, summary: str) -> float:
-        _, _, f1 = bert_score.score([summary], [reference], lang="en", verbose=False)
-        return f1[0].item()
-
-
-# ---- Dataset Helpers ----
-def load_dataset_to_dataframe(json_path: str, models: List[str]) -> pd.DataFrame:
-    with open(json_path, 'r') as f:
-        raw_data = json.load(f)
-
-    records = []
-    for idx, item in enumerate(raw_data):
-        row = {
-            "Testcase ID": idx,
-            "Source": item["source"],
-            "Reference Summary": item.get("reference_summary", "")
-        }
-        for model in models:
-            row[f"{model}_Summary"] = item.get(f"{model}_summary", "")
-        records.append(row)
-
-    return pd.DataFrame(records)
-
-
-# ---- Evaluation ----
-def evaluate_all_metrics(reference: str, summary: str) -> Dict:
-    rouge = RougeMetric().measure(reference, summary)
-    bert = BertScoreMetric().measure(reference, summary)
-    return {
-        "ROUGE-1 Score": rouge["rouge1"],
-        "ROUGE-L Score": rouge["rougeL"],
-        "BERTScore": bert
-    }
-
-
-def evaluate_and_format_results(df: pd.DataFrame, models: List[str]) -> pd.DataFrame:
-    all_results = []
-
-    for _, row in df.iterrows():
-        for model in models:
-            summary = row[f"{model}_Summary"]
-            reference = row["Reference Summary"]
-
-            results = evaluate_all_metrics(reference, summary)
-
-            flat_result = {
-                "Testcase ID": row["Testcase ID"],
-                "Model": model,
-                **results
-            }
-            all_results.append(flat_result)
-
-    return pd.DataFrame(all_results)
-
-
-# ---- Main ----
-def main():
-    dataset_file = "regulatory_summarization_dataset.json"
-    test_models = ['model_1', 'model_2', 'model_3']
-
-    df = load_dataset_to_dataframe(dataset_file, test_models)
-    results_df = evaluate_and_format_results(df, test_models)
-
-    # Display nicely in terminal
-    print(tabulate(results_df, headers='keys', tablefmt='fancy_grid', showindex=False))
-
-    # Save results
-    results_df.to_csv("summary_eval_scores.csv", index=False)
-    print("\n✅ Results saved to summary_eval_scores.csv")
+@app.callback(
+    Output("metric-bar-chart", "figure"),
+    [Input("metric-dropdown", "value"),
+     Input("model-checklist", "value")]
+)
+def update_bar_chart(selected_metric, selected_models):
+    filtered_df = df[df["Model"].isin(selected_models)]
+    fig = px.bar(
+        filtered_df,
+        x="Testcase ID",
+        y=selected_metric,
+        color="Model",
+        barmode="group",
+        title=f"{selected_metric} Across Models and Testcases",
+        height=500
+    )
+    fig.update_layout(legend_title_text="Model")
+    return fig
 
 
 if __name__ == "__main__":
-    main()
+    # Render requires binding to 0.0.0.0 and using dynamic PORT
+    port = int(os.environ.get("PORT", 8050))
+    app.run_server(host="0.0.0.0", port=port, debug=False)

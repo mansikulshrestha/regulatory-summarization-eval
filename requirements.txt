@@ -15,3 +15,6 @@ dash==2.18.2
 
 # Utilities
 tqdm==4.67.1
+
+# ML backend
+torch
