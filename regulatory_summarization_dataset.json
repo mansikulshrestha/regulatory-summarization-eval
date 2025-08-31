@@ -1,0 +1,27 @@
+[
+    {
+      "id": 1,
+      "source": "The FDA issued new guidance on medical device labeling in January 2025. Manufacturers must now include QR codes linking to updated electronic Instructions for Use (eIFU). The rule applies to all Class II and Class III devices sold in the U.S. within 12 months of publication.",
+      "reference_summary": "FDA guidance requires QR codes linking to eIFU for all Class II and III devices within 12 months.",
+      "model_1_summary": "FDA will require QR codes on all devices within one year.",
+      "model_2_summary": "The FDA issued new rules on device labeling that apply to Class II and III devices with QR codes.",
+      "model_3_summary": "FDA introduced stricter medical device guidelines."
+    },
+    {
+      "id": 2,
+      "source": "The European Medicines Agency (EMA) has mandated that all biologics approved after March 2025 include detailed post-market safety reporting every six months for the first two years. Reports must include adverse event data and real-world evidence collected from patient registries.",
+      "reference_summary": "EMA requires new biologics to submit six-month safety reports for two years, covering adverse events and registry data.",
+      "model_1_summary": "EMA asks for adverse event reports twice a year for biologics approved after March 2025.",
+      "model_2_summary": "Biologics need safety data every six months for two years after EMA approval.",
+      "model_3_summary": "EMA mandates real-world reporting of biologics."
+    },
+    {
+      "id": 3,
+      "source": "Health Canada released updated pharmacovigilance guidelines requiring manufacturers of oncology drugs to provide cumulative safety analyses annually. The new rule comes after a review of post-market surveillance data showing gaps in adverse event reporting for cancer treatments.",
+      "reference_summary": "Health Canada requires oncology drug makers to submit annual cumulative safety analyses.",
+      "model_1_summary": "Health Canada updated rules on annual safety analyses for oncology drugs.",
+      "model_2_summary": "Oncology drug makers must provide yearly safety reviews, says Health Canada.",
+      "model_3_summary": "Canada issued new drug rules for cancer treatments."
+    }
+  ]
+  
